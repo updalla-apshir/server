@@ -1,0 +1,343 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  admin
+  manager
+  accountant
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum BuildingType {
+  residential
+  commercial
+  industrial
+  mixed_use
+}
+
+enum UnitUsageType {
+  office
+  shop
+  storage
+  apartment
+}
+
+enum UnitStatus {
+  vacant
+  occupied
+  maintenance
+}
+
+enum ServiceChargeName {
+  security
+  cleaning
+  elevator
+}
+
+enum ParkingStatus {
+  available
+  assigned
+  reserved
+}
+
+enum TenantType {
+  company
+  individual
+}
+
+enum ContactRole {
+  primary
+  emergency
+  other
+}
+
+enum BillingCycle {
+  ONE_MONTH
+  THREE_MONTHS
+  FOUR_MONTHS
+  SIX_MONTHS
+  TWELVE_MONTHS
+}
+
+enum DepositStatus {
+  held
+  refunded
+  deducted
+}
+
+enum LeaseStatus {
+  draft
+  active
+  expired
+  terminated
+}
+
+enum InvoiceStatus {
+  pending
+  paid
+  overdue
+}
+
+enum InvoiceItemType {
+  rent
+  service_charge
+  parking
+}
+
+enum PaymentMethod {
+  cash
+  bank
+  mobile
+}
+
+enum AccountType {
+  cash
+  bank
+  mobile
+}
+
+enum AccountStatus {
+  active
+  inactive
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         UserRole
+  status       UserStatus
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  auditLogs AuditLog[]
+}
+
+model Property {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String
+  city      String
+  country   String
+  landArea  Decimal
+  createdAt DateTime @default(now())
+
+  buildings Building[]
+}
+
+model Building {
+  id          Int          @id @default(autoincrement())
+  propertyId  Int
+  name        String
+  type        BuildingType
+  floorsCount Int
+  totalArea   Decimal
+  status      String
+  createdAt   DateTime     @default(now())
+
+  property       Property        @relation(fields: [propertyId], references: [id])
+  units          Unit[]
+  serviceCharges ServiceCharge[]
+  parkingSpaces  ParkingSpace[]
+}
+
+model Unit {
+  id         Int           @id @default(autoincrement())
+  buildingId Int
+  unitNumber String
+  floor      Int
+  area       Decimal
+  usageType  UnitUsageType
+  baseRent   Decimal
+  status     UnitStatus
+  createdAt  DateTime      @default(now())
+
+  building Building @relation(fields: [buildingId], references: [id])
+  lease    Lease?
+}
+
+model ServiceCharge {
+  id         Int               @id @default(autoincrement())
+  buildingId Int
+  name       ServiceChargeName
+  monthlyFee Decimal
+  createdAt  DateTime          @default(now())
+
+  building Building @relation(fields: [buildingId], references: [id])
+}
+
+model ParkingSpace {
+  id         Int           @id @default(autoincrement())
+  buildingId Int
+  leaseId    Int?
+  slotNumber String
+  monthlyFee Decimal
+  status     ParkingStatus
+  createdAt  DateTime      @default(now())
+
+  building Building @relation(fields: [buildingId], references: [id])
+  lease    Lease?   @relation(fields: [leaseId], references: [id])
+}
+
+model Tenant {
+  id        Int        @id @default(autoincrement())
+  name      String
+  type      TenantType
+  phone     String
+  createdAt DateTime   @default(now())
+
+  contacts TenantContact[]
+  leases   Lease[]
+  payments Payment[]
+}
+
+model TenantContact {
+  id        Int         @id @default(autoincrement())
+  tenantId  Int
+  name      String
+  phone     String
+  role      ContactRole
+  createdAt DateTime    @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+}
+
+model Lease {
+  id                 Int           @id @default(autoincrement())
+  leaseNumber        String        @unique
+  tenantId           Int
+  unitId             Int           @unique
+  startDate          DateTime
+  endDate            DateTime
+  billingCycleMonths BillingCycle
+  gracePeriodDays    Int
+  depositAmount      Decimal
+  depositStatus      DepositStatus
+  status             LeaseStatus
+  createdAt          DateTime      @default(now())
+
+  tenant        Tenant               @relation(fields: [tenantId], references: [id])
+  unit          Unit                 @relation(fields: [unitId], references: [id])
+  parkingSpaces ParkingSpace[]
+  invoices      Invoice[]
+  statusHistory LeaseStatusHistory[]
+}
+
+model Invoice {
+  id            Int           @id @default(autoincrement())
+  leaseId       Int
+  invoiceNumber String
+  issueDate     DateTime
+  dueDate       DateTime
+  totalAmount   Decimal
+  paidAmount    Decimal       @default(0)
+  balanceAmount Decimal
+  status        InvoiceStatus
+  createdAt     DateTime      @default(now())
+
+  lease       Lease               @relation(fields: [leaseId], references: [id])
+  items       InvoiceItem[]
+  allocations PaymentAllocation[]
+}
+
+model InvoiceItem {
+  id          Int             @id @default(autoincrement())
+  invoiceId   Int
+  description String
+  amount      Decimal
+  type        InvoiceItemType
+  createdAt   DateTime        @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model Payment {
+  id          Int           @id @default(autoincrement())
+  tenantId    Int
+  accountId   Int
+  amount      Decimal
+  paymentDate DateTime
+  method      PaymentMethod
+  referenceNo String
+  createdAt   DateTime      @default(now())
+
+  tenant      Tenant              @relation(fields: [tenantId], references: [id])
+  account     Account             @relation(fields: [accountId], references: [id])
+  allocations PaymentAllocation[]
+  receipts    Receipt[]
+}
+
+model PaymentAllocation {
+  id            Int      @id @default(autoincrement())
+  paymentId     Int
+  invoiceId     Int
+  amountApplied Decimal
+  createdAt     DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model Account {
+  id            Int           @id @default(autoincrement())
+  name          String
+  type          AccountType
+  accountNumber String
+  currency      String
+  balance       Decimal
+  status        AccountStatus
+  createdAt     DateTime      @default(now())
+
+  payments Payment[]
+}
+
+model Receipt {
+  id            Int      @id @default(autoincrement())
+  paymentId     Int
+  receiptNumber String
+  issuedAt      DateTime
+  totalAmount   Decimal
+  createdAt     DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  action     String
+  tableName  String
+  recordId   Int
+  beforeData Json?
+  afterData  Json?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model LeaseStatusHistory {
+  id        Int          @id @default(autoincrement())
+  leaseId   Int
+  oldStatus LeaseStatus?
+  newStatus LeaseStatus
+  changedBy Int
+  changedAt DateTime
+  note      String?
+
+  lease Lease @relation(fields: [leaseId], references: [id])
+}

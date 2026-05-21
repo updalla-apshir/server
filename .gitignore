@@ -1,0 +1,36 @@
+node_modules
+# # Keep environment variables out of version control
+# .env
+
+# /generated/prisma
+
+# # Build outputs
+dist/
+build/
+
+# # Logs
+# logs/
+# *.log
+# npm-debug.log*
+
+# # Coverage
+# coverage/
+# .nyc_output
+
+# # OS files
+# .DS_Store
+# Thumbs.db
+
+# # IDE
+# .idea/
+# .vscode/
+# *.swp
+# *.swo
+
+# # Environment files
+# .env.local
+# .env.*.local
+
+# # Temp
+# tmp/
+# temp/
