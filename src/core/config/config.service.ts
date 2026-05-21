@@ -4,20 +4,19 @@ import { Injectable } from '@nestjs/common';
 export class ConfigService {
   get database() {
     return {
-      url:
-        process.env.DATABASE_URL || 'postgresql://localhost:5432/property_db',
+      url: process.env.DATABASE_URL,
     };
   }
 
   get jwt() {
     return {
-      secret: process.env.JWT_SECRET || 'your-secret-key',
-      expiresIn: process.env.JWT_EXPIRES_IN || '1h',
+      secret: process.env.JWT_SECRET,
+      expiresIn: process.env.JWT_EXPIRES_IN,
     };
   }
 
   get port(): number {
-    return parseInt(process.env.PORT || '3000', 10);
+    return parseInt(process.env.PORT!, 10);
   }
 
   get isDevelopment(): boolean {

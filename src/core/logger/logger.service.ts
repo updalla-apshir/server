@@ -1,14 +1,13 @@
 import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
 import * as winston from 'winston';
-import { ConfigService } from '../config/config.service';
 
 @Injectable()
 export class LoggerService implements NestLoggerService {
   private logger: winston.Logger;
 
-  constructor(private configService: ConfigService) {
+  constructor() {
     this.logger = winston.createLogger({
-      level: configService.logLevel,
+      level: process.env.LOG_LEVEL,
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),
@@ -32,7 +31,7 @@ export class LoggerService implements NestLoggerService {
       ],
     });
 
-    if (configService.isProduction) {
+    if (process.env.NODE_ENV === 'production') {
       // Add additional transports for production
     }
   }

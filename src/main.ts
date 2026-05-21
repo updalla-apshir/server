@@ -32,6 +32,13 @@ async function bootstrap() {
     credentials: process.env.CORS_CREDENTIALS !== 'false',
   });
 
+  // Required for Private Network Access (HTTPS frontend → HTTP localhost backend)
+  const fastifyInstance = app.getHttpAdapter().getInstance();
+  fastifyInstance.addHook('onRequest', (request, reply, done) => {
+    reply.header('Access-Control-Allow-Private-Network', 'true');
+    done();
+  });
+
   const port = process.env.PORT || 8000;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
