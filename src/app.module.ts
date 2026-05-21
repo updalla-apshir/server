@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ConfigModule } from './core/config/config.module';
 import { DatabaseModule } from './core/database/database.module';
 import { LoggerModule } from './core/logger/logger.module';
 import { AuthModule } from './auth/auth.module';
@@ -29,6 +30,7 @@ import { AppService } from './app.service';
 
 @Module({
   imports: [
+    ConfigModule,
     DatabaseModule,
     LoggerModule,
     AuthModule,
