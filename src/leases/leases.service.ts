@@ -6,6 +6,7 @@ import {
 import { BaseService } from '../core/common/base.service';
 import { LeasesRepository } from './leases.repository';
 import { Lease, InvoiceItem } from '../../generated/prisma';
+import type { PaginationOptions } from '../shared/types/common';
 import { InvoiceItemsService } from '../invoice-items/invoice-items.service';
 import { CreateLeaseDto, UpdateLeaseDto } from './dto/create-lease.dto';
 
@@ -19,6 +20,44 @@ export class LeasesService extends BaseService<Lease> {
     private invoiceItemsService: InvoiceItemsService,
   ) {
     super(leasesRepository);
+  }
+
+  async findAll(
+    pagination: PaginationOptions = { page: 1, limit: 10 },
+    search?: string,
+  ): Promise<{ data: Lease[]; total: number; page: number; limit: number }> {
+    const page = Number(pagination.page) || 1;
+    const limit = Number(pagination.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { leaseNumber: { contains: search, mode: 'insensitive' } },
+        { tenant: { name: { contains: search, mode: 'insensitive' } } },
+        { unit: { unitNumber: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.leasesRepository.findAll({
+        skip,
+        take: limit,
+        where,
+        include: {
+          tenant: true,
+          unit: {
+            include: {
+              building: true,
+            },
+          },
+        },
+      }),
+      this.leasesRepository.count(where),
+    ]);
+
+    return { data, total, page, limit };
   }
 
   async create(data: CreateLeaseDto): Promise<Lease> {

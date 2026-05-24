@@ -26,8 +26,11 @@ export class LeasesController {
   }
 
   @Get()
-  findAll(@Query() pagination: PaginationOptions) {
-    return this.leasesService.findAll(pagination);
+  findAll(
+    @Query() pagination: PaginationOptions,
+    @Query('search') search?: string,
+  ) {
+    return this.leasesService.findAll(pagination, search);
   }
 
   @Get(':id')

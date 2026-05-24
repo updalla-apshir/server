@@ -9,7 +9,7 @@ export const createInvoiceSchema = z.object({
   invoiceNumber: z.string().min(1).max(50),
   issueDate: z.coerce.date(),
   dueDate: z.coerce.date(),
-  totalAmount: decimalSchema,
+  totalAmount: decimalSchema.optional(),
 });
 
 export const updateInvoiceSchema = z
