@@ -3,17 +3,16 @@ import {
   Catch,
   ExceptionFilter,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { FastifyReply } from 'fastify';
 import { ZodError } from 'zod';
 import { IApiResponse } from '../common/interfaces';
 
-@Catch(ZodError, BadRequestException)
+@Catch(ZodError)
 export class ValidationExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(ValidationExceptionFilter.name);
 
-  catch(exception: ZodError | BadRequestException, host: ArgumentsHost) {
+  catch(exception: ZodError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<FastifyReply>();
     const request = ctx.getRequest();
@@ -34,18 +33,11 @@ export class ValidationExceptionFilter implements ExceptionFilter {
     response.status(422).send(errorResponse);
   }
 
-  private formatValidationErrors(exception: ZodError | BadRequestException) {
-    if (exception instanceof ZodError) {
-      return exception.errors.map((error) => ({
-        field: error.path.join('.'),
-        message: error.message,
-        code: error.code,
-      }));
-    }
-
-    return {
-      message: exception.message,
-      details: (exception as any).response?.message || [],
-    };
+  private formatValidationErrors(exception: ZodError) {
+    return exception.errors.map((error) => ({
+      field: error.path.join('.'),
+      message: error.message,
+      code: error.code,
+    }));
   }
 }
