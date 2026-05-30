@@ -36,6 +36,9 @@ export class BaseRepository<T> {
   }
 
   async findOne(id: number, include?: any): Promise<T | null> {
+    if (id === undefined || id === null) {
+      return null;
+    }
     return this.model.findUnique({
       where: { id },
       include,

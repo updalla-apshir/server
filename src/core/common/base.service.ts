@@ -52,6 +52,9 @@ export class BaseService<T> implements IService<T> {
   }
 
   async findOne(id: number): Promise<T> {
+    if (id === undefined || id === null || isNaN(id)) {
+      throw new BadRequestException(`Invalid ID: ${id}`);
+    }
     const entity = await this.repository.findOne(id);
     if (!entity) {
       throw new NotFoundException(`Entity with ID ${id} not found`);
@@ -62,9 +65,10 @@ export class BaseService<T> implements IService<T> {
   async create(data: any): Promise<T> {
     try {
       const result = await this.repository.create(data);
-      // Ensure the created entity is immediately available for subsequent reads
-      // by forcing a database refresh if using read replicas
-      await this.repository.findOne((result as any).id);
+      const entityId = (result as any).id;
+      if (entityId !== undefined && entityId !== null) {
+        await this.repository.findOne(entityId);
+      }
       return result;
     } catch (error) {
       throw new BadRequestException('Failed to create entity', error.message);
