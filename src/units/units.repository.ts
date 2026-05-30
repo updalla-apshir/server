@@ -9,6 +9,16 @@ export class UnitsRepository extends BaseRepository<Unit> {
     super(prisma, 'unit');
   }
 
+  protected getChildRelations() {
+    return [
+      { modelName: 'invoiceItem', where: (id: number) => ({ invoice: { lease: { unitId: id } } }) },
+      { modelName: 'paymentAllocation', where: (id: number) => ({ invoice: { lease: { unitId: id } } }) },
+      { modelName: 'invoice', where: (id: number) => ({ lease: { unitId: id } }) },
+      { modelName: 'leaseStatusHistory', where: (id: number) => ({ lease: { unitId: id } }) },
+      { modelName: 'lease', where: (id: number) => ({ unitId: id }) },
+    ];
+  }
+
   async findByBuilding(buildingId: number): Promise<Unit[]> {
     return this.prisma.unit.findMany({
       where: { buildingId },

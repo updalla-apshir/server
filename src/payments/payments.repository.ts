@@ -9,6 +9,13 @@ export class PaymentsRepository extends BaseRepository<Payment> {
     super(prisma, 'payment');
   }
 
+  protected getChildRelations() {
+    return [
+      { modelName: 'paymentAllocation', where: (id: number) => ({ paymentId: id }) },
+      { modelName: 'receipt', where: (id: number) => ({ paymentId: id }) },
+    ];
+  }
+
   findByTenant(tenantId: number) {
     return this.prisma.payment.findMany({
       where: { tenantId },

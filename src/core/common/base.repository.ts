@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 
+export interface ChildRelation {
+  modelName: string;
+  where: (id: number) => any;
+}
+
 @Injectable()
 export class BaseRepository<T> {
   protected model: any;
@@ -10,6 +15,10 @@ export class BaseRepository<T> {
     modelName: string,
   ) {
     this.model = (this.prisma as any)[modelName];
+  }
+
+  protected getChildRelations(): ChildRelation[] {
+    return [];
   }
 
   async findAll(
@@ -64,9 +73,20 @@ export class BaseRepository<T> {
   }
 
   async delete(id: number): Promise<T> {
-    return this.model.delete({
-      where: { id },
-    });
+    const children = this.getChildRelations();
+    if (children.length === 0) {
+      return this.model.delete({ where: { id } });
+    }
+
+    const prisma = this.prisma as any;
+    const results = await this.prisma.$transaction([
+      ...children.map((child) =>
+        prisma[child.modelName].deleteMany({ where: child.where(id) }),
+      ),
+      this.model.delete({ where: { id } }),
+    ]);
+
+    return results[results.length - 1] as T;
   }
 
   async count(where?: any): Promise<number> {

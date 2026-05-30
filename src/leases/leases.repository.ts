@@ -9,6 +9,15 @@ export class LeasesRepository extends BaseRepository<Lease> {
     super(prisma, 'lease');
   }
 
+  protected getChildRelations() {
+    return [
+      { modelName: 'invoiceItem', where: (id: number) => ({ invoice: { leaseId: id } }) },
+      { modelName: 'paymentAllocation', where: (id: number) => ({ invoice: { leaseId: id } }) },
+      { modelName: 'invoice', where: (id: number) => ({ leaseId: id }) },
+      { modelName: 'leaseStatusHistory', where: (id: number) => ({ leaseId: id }) },
+    ];
+  }
+
   async findByTenant(tenantId: number): Promise<Lease[]> {
     return this.prisma.lease.findMany({
       where: { tenantId },

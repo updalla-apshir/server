@@ -9,6 +9,20 @@ export class TenantsRepository extends BaseRepository<Tenant> {
     super(prisma, 'tenant');
   }
 
+  protected getChildRelations() {
+    return [
+      { modelName: 'invoiceItem', where: (id: number) => ({ invoice: { lease: { tenantId: id } } }) },
+      { modelName: 'paymentAllocation', where: (id: number) => ({ invoice: { lease: { tenantId: id } } }) },
+      { modelName: 'paymentAllocation', where: (id: number) => ({ payment: { tenantId: id } }) },
+      { modelName: 'receipt', where: (id: number) => ({ payment: { tenantId: id } }) },
+      { modelName: 'invoice', where: (id: number) => ({ lease: { tenantId: id } }) },
+      { modelName: 'leaseStatusHistory', where: (id: number) => ({ lease: { tenantId: id } }) },
+      { modelName: 'lease', where: (id: number) => ({ tenantId: id }) },
+      { modelName: 'tenantContact', where: (id: number) => ({ tenantId: id }) },
+      { modelName: 'payment', where: (id: number) => ({ tenantId: id }) },
+    ];
+  }
+
   async findByPhone(phone: string): Promise<Tenant[]> {
     return this.prisma.tenant.findMany({
       where: { phone },

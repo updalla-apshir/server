@@ -8,4 +8,12 @@ export class AccountsRepository extends BaseRepository<Account> {
   constructor(prisma: PrismaService) {
     super(prisma, 'account');
   }
+
+  protected getChildRelations() {
+    return [
+      { modelName: 'paymentAllocation', where: (id: number) => ({ payment: { accountId: id } }) },
+      { modelName: 'receipt', where: (id: number) => ({ payment: { accountId: id } }) },
+      { modelName: 'payment', where: (id: number) => ({ accountId: id }) },
+    ];
+  }
 }

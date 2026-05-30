@@ -22,6 +22,13 @@ export class InvoicesRepository extends BaseRepository<Invoice> {
     });
   }
 
+  protected getChildRelations() {
+    return [
+      { modelName: 'invoiceItem', where: (id: number) => ({ invoiceId: id }) },
+      { modelName: 'paymentAllocation', where: (id: number) => ({ invoiceId: id }) },
+    ];
+  }
+
   async markOverdue(): Promise<number> {
     const now = new Date();
     const result = await this.prisma.invoice.updateMany({

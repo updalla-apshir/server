@@ -9,6 +9,12 @@ export class UsersRepository extends BaseRepository<User> {
     super(prisma, 'user');
   }
 
+  protected getChildRelations() {
+    return [
+      { modelName: 'auditLog', where: (id: number) => ({ userId: id }) },
+    ];
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({
       where: { email },
