@@ -1,8 +1,9 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, forwardRef, BadRequestException } from '@nestjs/common';
 import { BaseService } from '../core/common/base.service';
 import { PaymentsRepository } from './payments.repository';
 import { Payment } from '../../generated/prisma';
 import { AccountsService } from '../accounts/accounts.service';
+import { InvoicesService } from '../invoices/invoices.service';
 import { PaymentAllocationsService } from '../payment-allocations/payment-allocations.service';
 import type { CreatePaymentDto } from './dto/create-payment.dto';
 import type { UpdatePaymentDto } from './dto/create-payment.dto';
@@ -12,6 +13,7 @@ export class PaymentsService extends BaseService<Payment> {
   constructor(
     private paymentsRepository: PaymentsRepository,
     private accountsService: AccountsService,
+    private invoicesService: InvoicesService,
     @Inject(forwardRef(() => PaymentAllocationsService))
     private paymentAllocationsService: PaymentAllocationsService,
   ) {
@@ -20,6 +22,17 @@ export class PaymentsService extends BaseService<Payment> {
 
   async create(data: CreatePaymentDto): Promise<Payment> {
     const { invoiceId, ...paymentData } = data;
+
+    if (invoiceId) {
+      const invoice = await this.invoicesService.findOne(invoiceId);
+      const currentBalance = Number(invoice.balanceAmount);
+      if (Number(data.amount) > currentBalance) {
+        throw new BadRequestException(
+          `Amount applied (${data.amount}) exceeds invoice balance (${currentBalance})`,
+        );
+      }
+    }
+
     const payment = await this.paymentsRepository.create(paymentData);
     const account = await this.accountsService.findOne(data.accountId);
     await this.accountsService.update(data.accountId, {
